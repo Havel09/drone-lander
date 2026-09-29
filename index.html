@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+		<meta name="description" content="Drone Lander — jeu piloté par les capteurs du téléphone. Téléchargez l'APK Android ou installez l'application.">
+		<meta name="theme-color" content="#ff8c00">
+		<link rel="manifest" href="manifest.json">
+		<link rel="icon" href="icons/icon-192.png" type="image/png">
+		<link rel="apple-touch-icon" href="icons/icon-180.png">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+		<title>Drone Lander</title>
+		<style>
+			* { margin: 0; padding: 0; box-sizing: border-box; }
+			body {
+				min-height: 100vh;
+				font-family: Calibri, Arial, sans-serif;
+				color: #e8e8f0;
+				background: #12122a;
+				background-image: radial-gradient(circle at 50% -20%, #2a2a55 0%, #12122a 60%);
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				padding: 24px 16px 48px;
+			}
+			.icon {
+				width: 96px;
+				height: 96px;
+				border-radius: 24px;
+				filter: drop-shadow(0 6px 18px rgba(255, 140, 0, 0.35));
+				margin-bottom: 12px;
+			}
+			h1 { font-size: 2.2rem; color: #ff8c00; text-shadow: 0 2px 8px rgba(0,0,0,.6); }
+			.sub { color: #aab; margin-top: 6px; font-size: 1.05rem; text-align: center; max-width: 520px; }
+			.badges { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+			.badge { font-size: .8rem; padding: 5px 12px; border-radius: 20px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); }
+			.card {
+				margin-top: 28px;
+				width: 100%; max-width: 480px;
+				background: rgba(255,255,255,.06);
+				border: 1px solid rgba(255,255,255,.12);
+				border-radius: 18px;
+				padding: 26px 24px;
+				text-align: center;
+			}
+			.btn {
+				display: block; width: 100%;
+				padding: 16px;
+				margin-top: 12px;
+				border: none; border-radius: 14px;
+				font-size: 1.15rem; font-weight: 700;
+				cursor: pointer; text-decoration: none;
+				transition: transform .12s ease, box-shadow .12s ease;
+				color: #fff;
+			}
+			.btn:hover { transform: translateY(-2px); }
+			.btn:active { transform: translateY(0); }
+			.btn-primary { background: linear-gradient(135deg, #ff8c00, #e06000); box-shadow: 0 6px 20px rgba(255,140,0,.35); }
+			.btn-primary:hover { box-shadow: 0 10px 26px rgba(255,140,0,.5); }
+			.btn-pwa { background: linear-gradient(135deg, #3f7cff, #2554d0); box-shadow: 0 6px 20px rgba(63,124,255,.3); }
+			.btn-pwa.hidden, #installBtn.hidden { display: none; }
+			.meta { margin-top: 14px; color: #aab; font-size: .9rem; }
+			.meta b { color: #ff8c00; }
+			ol.steps { margin-top: 26px; text-align: left; max-width: 480px; width: 100%; }
+			ol.steps li { margin: 14px 0 14px 22px; color: #cfd; font-size: 1.02rem; }
+			ol.steps li b { color: #fff; }
+			.note { margin-top: 26px; max-width: 480px; color: #889; font-size: .85rem; line-height: 1.5; text-align: center; }
+			footer { margin-top: 34px; color: #667; font-size: .82rem; }
+			.ok { color: #4cd97b; }
+		</style>
+	</head>
+	<body>
+		<img class="icon" src="icons/icon-192.png" alt="Drone Lander">
+		<h1>Drone Lander</h1>
+		<p class="sub">Le jeu du drone piloté par <b>les capteurs de votre téléphone</b> : inclinez-le pour vous déplacer et pour la poussée.</p>
+		<div class="badges">
+			<span class="badge">Version 1.0.0</span>
+			<span class="badge">Android 7.0+</span>
+			<span class="badge">4,3 Mo</span>
+			<span class="badge">Gratuit</span>
+		</div>
+
+		<div class="card">
+			<button id="installBtn" class="btn btn-pwa hidden">📲 Installer l'application</button>
+			<a class="btn btn-primary" href="drone-lander.apk" download="DroneLander.apk">⬇️ Télécharger l'APK (Android)</a>
+			<p class="meta" id="tailleApk">…</p>
+		</div>
+
+		<ol class="steps">
+			<li><b>Téléchargez l'APK</b> avec le bouton orange.</li>
+			<li><b>Ouvrez le fichier</b> téléchargé pour lancer l'installation.</li>
+			<li>Si demandé, autorisez <b>« Sources inconnues »</b> pour votre navigateur.</li>
+			<li><b>Jouez !</b> L'app se pilote à l'inclinaison (bouton « Démarrer » au premier lancement).</li>
+		</ol>
+
+		<p class="note" id="iosNote" hidden></p>
+
+		<footer>Drone Lander — créé avec Apache Cordova</footer>
+
+		<script>
+			// Taille affichée de l'APK
+			fetch("drone-lander.apk", { method: "HEAD" })
+				.then(r => { const mo = (r.headers.get("Content-Length") / 1048576).toFixed(1); tailleApk.textContent = "Taille : " + mo + " Mo — Fichier : drone-lander.apk"; })
+				.catch(() => { tailleApk.hidden = true; });
+
+			// Installation en PWA (quand c'est possible)
+			let deferredPrompt = null;
+			window.addEventListener("beforeinstallprompt", (e) => {
+				e.preventDefault();
+				deferredPrompt = e;
+				document.getElementById("installBtn").classList.remove("hidden");
+			});
+			document.getElementById("installBtn").addEventListener("click", async () => {
+				if (!deferredPrompt) return;
+				deferredPrompt.prompt();
+				await deferredPrompt.userChoice;
+				deferredPrompt = null;
+				document.getElementById("installBtn").classList.add("hidden");
+			});
+			window.addEventListener("appinstalled", () => {
+				document.getElementById("installBtn").classList.add("hidden");
+			});
+
+			// Sur iOS, la PWA s'installe via « Ajouter à l'écran d'accueil »
+			if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+				const n = document.getElementById("iosNote");
+				n.hidden = false;
+				n.textContent = "Sur iPhone/iPad : ouvrez ce site dans Safari, puis « Partager > Ajouter à l'écran d'accueil » pour installer l'app sans APK.";
+			}
+
+			// Enregistrement du service worker (fonctionne seulement en HTTPS/localhost)
+			if ("serviceWorker" in navigator) {
+				navigator.serviceWorker.register("./sw.js").catch(() => {});
+			}
+		</script>
+	</body>
+</html>
